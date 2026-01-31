@@ -1,0 +1,70 @@
+local addonName, ns = ...
+local LHH = LibStub("AceAddon-3.0"):NewAddon("lowHealthHelper", "AceEvent-3.0", "AceConsole-3.0")
+_G.LHH = LHH 
+
+-- Helper: Potion Scanner
+local function GetPotionData(spellID)
+    for bag = 0, 4 do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local itemID = C_Container.GetContainerItemID(bag, slot)
+            if itemID then
+                local _, sID = C_Item.GetItemSpell(itemID)
+                if sID == spellID then
+                    local count = C_Item.GetItemCount(itemID)
+                    local _, duration = C_Item.GetItemCooldown(itemID)
+                    return count, (duration or 0) == 0, C_Item.GetItemIconByID(itemID)
+                end
+            end
+        end
+    end
+    return 0, false, nil
+end
+
+function LHH:CreateMainFrame()
+    local f = CreateFrame("Frame", "LHH_MainFrame", UIParent)
+    f:SetSize(80, 80)
+    f:SetMovable(true)
+    f:EnableMouse(true)
+    f:SetClampedToScreen(true)
+    f:Hide()
+    f.tex = f:CreateTexture(nil, "OVERLAY")
+    f.tex:SetAllPoints()
+    
+    local p = self.db.profile.pos
+    f:ClearAllPoints()
+    f:SetPoint(p.point, UIParent, p.point, p.x, p.y)
+    f:SetScale(self.db.profile.scale)
+    
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", function(self) if IsControlKeyDown() and IsShiftKeyDown() then self:StartMoving() end end)
+    f:SetScript("OnDragStop", function(self) 
+        self:StopMovingOrSizing()
+        local point, _, _, x, y = self:GetPoint()
+        LHH.db.profile.pos = { point = point, x = x, y = y }
+    end)
+    self.frame = f
+end
+
+function LHH:RefreshIcon()
+    if not self.frame then return end
+    
+    -- FIXED: Preview now shows a Healthstone instead of a question mark
+    if self.configMode then 
+        self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512))
+        self.frame:SetAlpha(1) 
+        return 
+    end
+    
+    local hsCount = C_Item.GetItemCount(5512, false, true)
+    local potCount, isPotReady, potIcon = GetPotionData(self.db.profile.potionSpellID)
+    
+    if hsCount > 0 and C_Item.IsUsableItem(5512) then
+        self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512))
+        self.frame:SetAlpha(1)
+    elseif isPotReady then
+        self.frame.tex:SetTexture(potIcon)
+        self.frame:SetAlpha(1)
+    else 
+        self.frame:SetAlpha(0) 
+    end
+end
