@@ -1,8 +1,6 @@
-local addonName, ns = ...
-local LHH = LibStub("AceAddon-3.0"):NewAddon("lowHealthHelper", "AceEvent-3.0", "AceConsole-3.0")
-_G.LHH = LHH 
+local LHH = _G.LHH
+local LSM = LibStub("LibSharedMedia-3.0")
 
--- Helper: Potion Scanner
 local function GetPotionData(spellID)
     for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
@@ -43,12 +41,23 @@ function LHH:CreateMainFrame()
         LHH.db.profile.pos = { point = point, x = x, y = y }
     end)
     self.frame = f
+
+    -- Hook the alert specifically in the health specialist module
+    if LowHealthFrame then
+        LowHealthFrame:HookScript("OnShow", function()
+            self:RefreshIcon()
+            self.frame:Show()
+            local path = LSM:Fetch("sound", self.db.profile.soundName)
+            if path then PlaySoundFile(path, "Master") end
+        end)
+        LowHealthFrame:HookScript("OnHide", function() 
+            if not self.configMode then self.frame:Hide() end 
+        end)
+    end
 end
 
 function LHH:RefreshIcon()
     if not self.frame then return end
-    
-    -- FIXED: Preview now shows a Healthstone instead of a question mark
     if self.configMode then 
         self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512))
         self.frame:SetAlpha(1) 
@@ -59,11 +68,9 @@ function LHH:RefreshIcon()
     local potCount, isPotReady, potIcon = GetPotionData(self.db.profile.potionSpellID)
     
     if hsCount > 0 and C_Item.IsUsableItem(5512) then
-        self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512))
-        self.frame:SetAlpha(1)
+        self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512)); self.frame:SetAlpha(1)
     elseif isPotReady then
-        self.frame.tex:SetTexture(potIcon)
-        self.frame:SetAlpha(1)
+        self.frame.tex:SetTexture(potIcon); self.frame:SetAlpha(1)
     else 
         self.frame:SetAlpha(0) 
     end

@@ -1,11 +1,17 @@
 local LHH = _G.LHH
 local LSM = LibStub("LibSharedMedia-3.0")
 
--- Register Custom Media
-LSM:Register("sound", "Gasp", "Interface\\AddOns\\LowHealthHelper\\Media\\PowerAurasMedia\\Sounds\\Gasp.ogg")
-LSM:Register("sound", "Quest Abandoned", 567478)
+LHH.SoundList = {}
 
--- DEFAULTS (Moved here for better organization)
+local function RegisterAddonSound(name, path)
+    LSM:Register("sound", name, path)
+
+end
+
+for name, path in pairs(LHH.SoundsToRegister) do
+    RegisterAddonSound(name, path)
+end
+
 LHH.defaults = {
     profile = {
         pos = { point = "CENTER", x = 0, y = 0 },
@@ -13,7 +19,7 @@ LHH.defaults = {
         potionSpellID = 431416, 
         soundName = "Gasp", 
         deathEnabled = true,
-        deathSound = "Quest Abandoned",
+        deathSound = "Quest Failed",
     }
 }
 
@@ -24,9 +30,22 @@ function LHH:GetOptions()
         args = {
             hpHeader = { type = "header", name = "Low Health Alert", order = 10 },
             preview = {
-                type = "toggle", name = "Show Preview", order = 11,
+                type = "toggle",
+                name = "Show Preview",
+                desc = "Toggle the icon on/off to adjust its appearance.",
+                order = 11,
                 get = function() return self.configMode end,
-                set = function(_, v) self.configMode = v; self:RefreshIcon(); self.frame:SetShown(v) end,
+                set = function(_, v) 
+                    self.configMode = v
+                    self:RefreshIcon()
+                    if v then self.frame:Show() else self.frame:Hide() end
+                end,
+            },
+            previewDesc = {
+                type = "description",
+                name = "\n|cffffee00Movement:|r Hold |cffffffffCtrl + Shift|r and drag with your |cffffffffLeft Mouse Button|r to reposition the icon.",
+                fontSize = "medium",
+            
             },
             scale = {
                 type = "range", name = "Icon Scale", min = 0.5, max = 3.0, step = 0.05, order = 12,
@@ -34,7 +53,12 @@ function LHH:GetOptions()
                 set = function(_, v) self.db.profile.scale = v; self.frame:SetScale(v) end,
             },
             hpSound = {
-                type = "select", name = "Low Health Sound", dialogControl = "LSM30_Sound", values = LSM:HashTable("sound"), order = 13,
+                type = "select", 
+                name = "Low Health Sound", 
+                dialogControl = "LSM30_Sound", 
+            
+                values = LHH.SoundList, 
+                order = 13,
                 get = function() return self.db.profile.soundName end,
                 set = function(_, v) self.db.profile.soundName = v end,
             },
@@ -45,7 +69,12 @@ function LHH:GetOptions()
                 set = function(_, v) self.db.profile.deathEnabled = v end,
             },
             deathSound = {
-                type = "select", name = "Death Sound", dialogControl = "LSM30_Sound", values = LSM:HashTable("sound"), order = 22,
+                type = "select", 
+                name = "Death Sound", 
+                dialogControl = "LSM30_Sound", 
+            
+                values = LHH.SoundList, 
+                order = 22,
                 get = function() return self.db.profile.deathSound end,
                 set = function(_, v) self.db.profile.deathSound = v end,
             },
@@ -54,20 +83,23 @@ function LHH:GetOptions()
 end
 
 function LHH:OnInitialize()
-    -- Initialize DB using the defaults defined in this file
     self.db = LibStub("AceDB-3.0"):New("lowHealthHelperDB", self.defaults, true)
-    
     self:CreateMainFrame()
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("lowHealthHelper", self:GetOptions())
+    
+    local iconID = 538745 
     self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("lowHealthHelper", "Low Health Helper")
     
-    if self.optionsFrame then 
-        self.optionsFrame.logo = C_Item.GetItemIconByID(5512) 
+    if self.optionsFrame then
+        self.optionsFrame.icon = iconID 
+        self.optionsFrame.logo = iconID 
     end
 
     self:RegisterChatCommand("lhh", function() 
-        if Settings and Settings.OpenToCategory then Settings.OpenToCategory(self.optionsFrame.name) end 
+        if Settings and Settings.OpenToCategory then 
+            Settings.OpenToCategory(self.optionsFrame.name) 
+        end 
     end)
 
     if LowHealthFrame then
