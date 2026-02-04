@@ -64,14 +64,35 @@ function LHH:RefreshIcon()
         return 
     end
     
-    local hsCount = C_Item.GetItemCount(5512, false, true)
+    local healthstoneIDs = {224464, 5512} 
+    local bestHS = nil
+    local hsReady = false
+
+    -- 1. Find the best stone and check if it's OFF cooldown
+    for _, id in ipairs(healthstoneIDs) do
+        if C_Item.GetItemCount(id, false, true) > 0 then
+            bestHS = id
+            local startTime, duration = C_Item.GetItemCooldown(id)
+            -- If duration is 0, the item is ready to use
+            if (duration or 0) == 0 then
+                hsReady = true
+                break 
+            end
+        end
+    end
+
+    -- 2. Get Potion Data
     local potCount, isPotReady, potIcon = GetPotionData(self.db.profile.potionSpellID)
     
-    if hsCount > 0 and C_Item.IsUsableItem(5512) then
-        self.frame.tex:SetTexture(C_Item.GetItemIconByID(5512)); self.frame:SetAlpha(1)
+    -- 3. Logic: Show HS if ready, otherwise show Pot if ready
+    if bestHS and hsReady then
+        self.frame.tex:SetTexture(C_Item.GetItemIconByID(bestHS))
+        self.frame:SetAlpha(1)
     elseif isPotReady then
-        self.frame.tex:SetTexture(potIcon); self.frame:SetAlpha(1)
+        self.frame.tex:SetTexture(potIcon)
+        self.frame:SetAlpha(1)
     else 
+        -- If neither is ready, hide the frame so it doesn't bait you into clicking
         self.frame:SetAlpha(0) 
     end
 end
