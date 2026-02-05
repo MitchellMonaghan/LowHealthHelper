@@ -1,7 +1,7 @@
 ## Interface: 120000, 120001
 ## Title: LowHealthHelper
 ## Notes: This addon exists to help players be aware of their low health and their healing options. The addon also has a death notification feature that can easily be disabled. 
-## Version: 1.1
+## Version: 1.2
 ## IconTexture: 538745
 ## AddonCompartmentFunc: LHH_OnCompartmentClick
 ## SavedVariables: lowHealthHelperDB
