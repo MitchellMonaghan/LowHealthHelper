@@ -4,6 +4,7 @@
 ## Version: 1.1
 ## IconTexture: 538745
 ## AddonCompartmentFunc: LHH_OnCompartmentClick
+## SavedVariables: lowHealthHelperDB
 
 ## Libs
 Libs\LibStub\LibStub.lua

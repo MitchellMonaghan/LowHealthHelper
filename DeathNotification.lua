@@ -15,7 +15,9 @@ function LHH:RefreshRoster()
 end
 
 function LHH:OnUnitUpdate(event, unit)
-    if not self.db.profile.deathEnabled or not unit then return end
+    if not self.db or not self.db.profile.deathEnabled then return end
+    if not unit then return end
+    
     if not (unit:match("^raid%d+$") or unit:match("^party%d+$")) then return end
 
     local isDead = UnitIsDeadOrGhost(unit)
@@ -29,8 +31,11 @@ function LHH:OnUnitUpdate(event, unit)
     if not wasDead and isDead then
         local name = UnitName(unit) or "Someone"
         local soundPath = LSM:Fetch("sound", self.db.profile.deathSound)
-        if soundPath then PlaySoundFile(soundPath, "Master") end
-        self:Print("|cffff0000" .. name .. " died!|r")
+        
+        if self.db.profile.deathEnabled and soundPath then 
+            PlaySoundFile(soundPath, "Master") 
+            self:Print("|cffff0000" .. name .. " died!|r")
+        end
     end
     deadCache[unit] = isDead
 end

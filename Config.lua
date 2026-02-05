@@ -16,7 +16,7 @@ LHH.defaults = {
     profile = {
         pos = { point = "CENTER", x = 0, y = 0 },
         scale = 1.0,
-        potionSpellID = 431416, 
+        potionSpellID = 1238009, 
         soundName = "Gasp", 
         deathEnabled = true,
         deathSound = "Quest Failed",
@@ -55,12 +55,34 @@ function LHH:GetOptions()
             hpSound = {
                 type = "select", 
                 name = "Low Health Sound", 
-                dialogControl = "LSM30_Sound", 
-            
-                values = LHH.SoundList, 
+                dialogControl = "LSM30_Sound",
+                values = function()
+                    local list = {}
+                    for name, _ in pairs(LHH.SoundsToRegister) do
+                        list[name] = name
+                    end
+                    return list
+                end, 
                 order = 13,
                 get = function() return self.db.profile.soundName end,
                 set = function(_, v) self.db.profile.soundName = v end,
+            },
+            potionSpellID = {
+                type = "input",
+                name = "Potion Spell ID",
+                desc = "Enter the Spell ID of the potion you want to track (e.g., 1238009 for Invigorating Healing Potion).",
+                order = 14,
+                get = function() return tostring(self.db.profile.potionSpellID) end,
+                set = function(_, v) 
+                    local val = tonumber(v)
+                    if val then
+                        self.db.profile.potionSpellID = val
+                        self:RefreshIcon() -- Update the icon immediately
+                        print("|cff00ff00[LHH]|r Potion Spell ID updated to: " .. val)
+                    else
+                        print("|cffff0000[LHH] Error:|r Please enter a valid numerical Spell ID.")
+                    end
+                end,
             },
             deathHeader = { type = "header", name = "Death Notifications", order = 20 },
             deathEnabled = {
@@ -72,8 +94,13 @@ function LHH:GetOptions()
                 type = "select", 
                 name = "Death Sound", 
                 dialogControl = "LSM30_Sound", 
-            
-                values = LHH.SoundList, 
+                values = function()
+                    local list = {}
+                    for name, _ in pairs(LHH.SoundsToRegister) do
+                        list[name] = name
+                    end
+                    return list
+                end, 
                 order = 22,
                 get = function() return self.db.profile.deathSound end,
                 set = function(_, v) self.db.profile.deathSound = v end,
@@ -83,14 +110,26 @@ function LHH:GetOptions()
 end
 
 function LHH:OnInitialize()
+    if LHH.SoundsToRegister then
+        for name, path in pairs(LHH.SoundsToRegister) do
+            LSM:Register("sound", name, path)
+        end
+    end
+
     self.db = LibStub("AceDB-3.0"):New("lowHealthHelperDB", self.defaults, true)
+    
+    self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
+    self.db.RegisterCallback(self, "OnProfileCopied", "RefreshConfig")
+    self.db.RegisterCallback(self, "OnProfileReset", "RefreshConfig")
+
     self:CreateMainFrame()
+    
+    self:RefreshConfig()
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("lowHealthHelper", self:GetOptions())
-    
-    local iconID = 538745 
     self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("lowHealthHelper", "Low Health Helper")
     
+    local iconID = 538745 
     if self.optionsFrame then
         self.optionsFrame.icon = iconID 
         self.optionsFrame.logo = iconID 
@@ -110,6 +149,14 @@ function LHH:OnInitialize()
         end)
         LowHealthFrame:HookScript("OnHide", function() if not self.configMode then self.frame:Hide() end end)
     end
+end
+
+function LHH:RefreshConfig()
+    if not self.frame then return end
+    local p = self.db.profile.pos
+    self.frame:ClearAllPoints()
+    self.frame:SetPoint(p.point, UIParent, p.point, p.x, p.y)
+    self.frame:SetScale(self.db.profile.scale) -- Ensures scale persists
 end
 
 function LHH:OnEnable()
