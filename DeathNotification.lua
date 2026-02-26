@@ -1,6 +1,7 @@
 local LHH = _G.LHH
 local LSM = LibStub("LibSharedMedia-3.0")
 local deadCache = {}
+local nextDeathSoundAt = 0
 
 function LHH:RefreshRoster()
     wipe(deadCache)
@@ -32,9 +33,14 @@ function LHH:OnUnitUpdate(event, unit)
         local name = UnitName(unit) or "Someone"
         local soundPath = LSM:Fetch("sound", self.db.profile.deathSound)
         
-        if self.db.profile.deathEnabled and soundPath then 
-            PlaySoundFile(soundPath, "Master") 
-            self:Print("|cffff0000" .. name .. " died!|r")
+        if self.db.profile.deathEnabled and soundPath then
+            local now = (GetTimePreciseSec and GetTimePreciseSec()) or GetTime()
+            local throttle = tonumber(self.db.profile.deathSoundThrottleSeconds) or 0.5
+            if throttle < 0 then throttle = 0 end
+            if now >= nextDeathSoundAt then
+                PlaySoundFile(soundPath, "Master")
+                nextDeathSoundAt = now + throttle
+            end
         end
     end
     deadCache[unit] = isDead
