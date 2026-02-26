@@ -94,6 +94,50 @@ local function GetTalentRankBySpellID(talentSpellID)
     return 0
 end
 
+local function GetTalentRankByName(talentName)
+    if not talentName or talentName == "" then
+        return 0
+    end
+    if not (C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_Traits and C_Spell and C_Spell.GetSpellName) then
+        return 0
+    end
+
+    local configID = C_ClassTalents.GetActiveConfigID()
+    if not configID then
+        return 0
+    end
+
+    local configInfo = C_Traits.GetConfigInfo(configID)
+    if not configInfo or not configInfo.treeIDs then
+        return 0
+    end
+
+    for _, treeID in ipairs(configInfo.treeIDs) do
+        local nodeIDs = C_Traits.GetTreeNodes(treeID)
+        if nodeIDs then
+            for _, nodeID in ipairs(nodeIDs) do
+                local nodeInfo = C_Traits.GetNodeInfo(configID, nodeID)
+                if nodeInfo and nodeInfo.entryIDs then
+                    for _, entryID in ipairs(nodeInfo.entryIDs) do
+                        local entryInfo = C_Traits.GetEntryInfo(configID, entryID)
+                        local definitionID = entryInfo and entryInfo.definitionID
+                        local definitionInfo = definitionID and C_Traits.GetDefinitionInfo(definitionID)
+                        local spellID = definitionInfo and definitionInfo.spellID
+                        if spellID then
+                            local spellName = C_Spell.GetSpellName(spellID)
+                            if spellName == talentName then
+                                return tonumber(nodeInfo.currentRank) or 0
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return 0
+end
+
 local function GetDefaultHealingOptionsPriority()
     if LHH.HealingOptions then
         local priority = {}
@@ -176,17 +220,19 @@ function LHH:ResolveOptionDuration(option)
         end
     end
 
-    if option.kind == "spell" and option.spellID == 498 then
-        -- Unbreakable Spirit (114154): Divine Protection cooldown reduced by 30%.
-        local hasUnbreakableSpirit = false
-        if IsPlayerSpell then
-            hasUnbreakableSpirit = IsPlayerSpell(114154)
+    if option.kind == "spell" and option.spellID == 19236 then
+        -- Angel's Mercy: reduce Desperate Prayer cooldown by 20s.
+        local angelsMercyRank = GetTalentRankByName("Angel's Mercy")
+        if angelsMercyRank > 0 then
+            fallbackSeconds = math.max(0, fallbackSeconds - 20)
         end
-        if not hasUnbreakableSpirit then
-            hasUnbreakableSpirit = GetTalentRankBySpellID(114154) > 0
-        end
-        if hasUnbreakableSpirit then
-            fallbackSeconds = fallbackSeconds * 0.7
+    end
+
+    if option.kind == "spell" and option.spellID == 108416 then
+        -- Frequent Donor (386686): reduce Dark Pact cooldown by 15s.
+        local frequentDonorRank = GetTalentRankBySpellID(386686)
+        if frequentDonorRank > 0 then
+            fallbackSeconds = math.max(0, fallbackSeconds - 15)
         end
     end
 

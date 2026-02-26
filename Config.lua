@@ -5,7 +5,9 @@ LHH.SoundList = {}
 LHH.HealingOptions = {
     { key = "healthstone", kind = "healthstone", fallbackName = "Healthstone" },
     { key = "potion", kind = "potion", fallbackName = "Potion" },
-    { key = "spell:498", kind = "spell", spellID = 498, fallbackName = "Divine Protection", fallbackCooldown = 60 },
+    { key = "spell:108416", kind = "spell", spellID = 108416, fallbackName = "Dark Pact", fallbackCooldown = 60 },
+    { key = "spell:185311", kind = "spell", spellID = 185311, fallbackName = "Crimson Vial", fallbackCooldown = 30 },
+    { key = "spell:19236", kind = "spell", spellID = 19236, fallbackName = "Desperate Prayer", fallbackCooldown = 90 },
     { key = "spell:109304", kind = "spell", spellID = 109304, fallbackName = "Exhilaration", fallbackCooldown = 120 },
     { key = "spell:6789", kind = "spell", spellID = 6789, fallbackName = "Mortal Coil", fallbackCooldown = 45 },
 }
