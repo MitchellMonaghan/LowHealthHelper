@@ -256,8 +256,9 @@ function LHH:GetOptions()
                     local val = tonumber(v)
                     if val then
                         self.db.profile.potionSpellID = val
+                        if self.MarkPotionCacheDirty then self:MarkPotionCacheDirty() end
                         if self.RequestCooldownRebuild then self:RequestCooldownRebuild() end
-                        self:RefreshIcon() -- Update the icon immediately
+                        if self.RequestRefreshIcon then self:RequestRefreshIcon() else self:RefreshIcon() end -- Update the icon immediately
                         print("|cff00ff00[LHH]|r Potion Spell ID updated to: " .. val)
                     else
                         print("|cffff0000[LHH] Error:|r Please enter a valid numerical Spell ID.")
@@ -338,6 +339,7 @@ function LHH:OnInitialize()
         self.db.profile.classAbilityPriority = nil
     end
     self.db.profile.healingOptionsPriority = self:GetHealingOptionsPriority()
+    if self.MarkPotionCacheDirty then self:MarkPotionCacheDirty() end
     if self.RequestCooldownRebuild then self:RequestCooldownRebuild() end
     
     self.db.RegisterCallback(self, "OnProfileChanged", "RefreshConfig")
@@ -363,13 +365,6 @@ function LHH:OnInitialize()
         end 
     end)
 
-    if LowHealthFrame then
-        LowHealthFrame:HookScript("OnShow", function()
-            self:RefreshIcon(); self.frame:Show()
-            self:TryPlayLowHealthSound()
-        end)
-        LowHealthFrame:HookScript("OnHide", function() if not self.configMode then self.frame:Hide() end end)
-    end
 end
 
 function LHH:RefreshConfig()
@@ -381,8 +376,9 @@ function LHH:RefreshConfig()
 end
 
 function LHH:OnEnable()
-    self:RegisterEvent("BAG_UPDATE", "RefreshIcon")
-    self:RegisterEvent("ACTIONBAR_UPDATE_COOLDOWN", "RefreshIcon")
+    self:RegisterEvent("BAG_UPDATE_DELAYED", "OnInventoryUpdated")
+    self:RegisterEvent("BAG_UPDATE_COOLDOWN", "RequestRefreshIcon")
+    self:RegisterEvent("SPELL_UPDATE_COOLDOWN", "RequestRefreshIcon")
     self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED", "OnPlayerSpellSucceeded")
     self:RegisterEvent("SPELLS_CHANGED", "OnSpellsChanged")
     self:RegisterEvent("PLAYER_TALENT_UPDATE", "OnSpellsChanged")
@@ -391,4 +387,5 @@ function LHH:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "RefreshRoster")
     self:RegisterEvent("UNIT_HEALTH", "OnUnitUpdate")
     self:RegisterEvent("UNIT_FLAGS", "OnUnitUpdate")
+    if self.RequestRefreshIcon then self:RequestRefreshIcon() else self:RefreshIcon() end
 end

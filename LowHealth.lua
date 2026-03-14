@@ -1,6 +1,7 @@
 local LHH = _G.LHH
 local LSM = LibStub("LibSharedMedia-3.0")
 local nextLowHealthSoundAt = 0
+local spellOptionKeyPattern = "^spell:(%d+)$"
 
 local function Now()
     return (GetTimePreciseSec and GetTimePreciseSec()) or GetTime()
@@ -10,7 +11,7 @@ local function SafeNumber(value)
     return tonumber(value) or 0
 end
 
-local function GetPotionData(spellID)
+local function ScanPotionData(spellID)
     for bag = 0, 4 do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local itemID = C_Container.GetContainerItemID(bag, slot)
@@ -151,6 +152,7 @@ end
 
 function LHH:GetReadyHealingOptionIcon()
     local priority = self.GetHealingOptionsPriority and self:GetHealingOptionsPriority() or GetDefaultHealingOptionsPriority()
+    local optionKeyToSpellID = self.optionKeyToSpellID
 
     for _, optionKey in ipairs(priority) do
         if optionKey == "healthstone" then
@@ -165,13 +167,16 @@ function LHH:GetReadyHealingOptionIcon()
             end
 
         elseif optionKey == "potion" then
-            local potCount, potIcon = GetPotionData(self.db.profile.potionSpellID)
+            local potCount, potIcon = self:GetPotionDataCached()
             if potCount > 0 and self:IsOptionInternallyReady("potion") then
                 return potIcon
             end
 
         else
-            local spellID = tonumber(string.match(tostring(optionKey), "^spell:(%d+)$"))
+            local spellID = optionKeyToSpellID and optionKeyToSpellID[optionKey]
+            if not spellID then
+                spellID = tonumber(string.match(tostring(optionKey), spellOptionKeyPattern))
+            end
             if spellID then
                 local spellIcon = self:IsOptionInternallyReady(optionKey) and GetReadySpellIcon(spellID)
                 if spellIcon then
@@ -182,6 +187,41 @@ function LHH:GetReadyHealingOptionIcon()
     end
 
     return nil
+end
+
+function LHH:MarkPotionCacheDirty()
+    self.potionCacheDirty = true
+end
+
+function LHH:GetPotionDataCached()
+    if self.potionCacheDirty or not self.potionCache then
+        local spellID = tonumber(self.db and self.db.profile and self.db.profile.potionSpellID)
+        local count, icon = 0, nil
+        if spellID then
+            count, icon = ScanPotionData(spellID)
+        end
+        self.potionCache = { count = count, icon = icon }
+        self.potionCacheDirty = false
+    end
+
+    return self.potionCache.count or 0, self.potionCache.icon
+end
+
+function LHH:RequestRefreshIcon()
+    if self.refreshQueued then
+        return
+    end
+
+    self.refreshQueued = true
+    C_Timer.After(0, function()
+        self.refreshQueued = false
+        self:RefreshIcon()
+    end)
+end
+
+function LHH:OnInventoryUpdated()
+    self:MarkPotionCacheDirty()
+    self:RequestRefreshIcon()
 end
 
 function LHH:IsOptionInternallyReady(optionKey)
@@ -251,6 +291,7 @@ end
 function LHH:RebuildCooldownTracking()
     self.spellToOptionKey = {}
     self.spellNameToOptionKey = {}
+    self.optionKeyToSpellID = {}
     self.optionCooldownDuration = self.optionCooldownDuration or {}
 
     if not LHH.HealingOptions then
@@ -259,6 +300,9 @@ function LHH:RebuildCooldownTracking()
 
     for _, option in ipairs(LHH.HealingOptions) do
         self.optionCooldownDuration[option.key] = self:ResolveOptionDuration(option)
+        if option.kind == "spell" and option.spellID then
+            self.optionKeyToSpellID[option.key] = option.spellID
+        end
 
         if option.kind == "spell" and option.spellID then
             self.spellToOptionKey[option.spellID] = option.key
@@ -319,20 +363,20 @@ function LHH:OnPlayerSpellSucceeded(_, unit, _, spellID)
         if cooldownSeconds > 0 then
             self:RegisterOptionCooldown(optionKey, cooldownSeconds)
         end
-        self:RefreshIcon()
+        self:RequestRefreshIcon()
     end
 end
 
 function LHH:OnSpellsChanged()
     self:RequestCooldownRebuild()
-    self:RefreshIcon()
+    self:RequestRefreshIcon()
 end
 
 function LHH:OnPlayerRegenEnabled()
     if self.cooldownRebuildPending then
         self:RequestCooldownRebuild()
     end
-    self:RefreshIcon()
+    self:RequestRefreshIcon()
 end
 
 function LHH:TryPlayLowHealthSound()
@@ -381,7 +425,7 @@ function LHH:CreateMainFrame()
     -- Hook the alert specifically in the health specialist module
     if LowHealthFrame then
         LowHealthFrame:HookScript("OnShow", function()
-            self:RefreshIcon()
+            self:RequestRefreshIcon()
             self.frame:Show()
             self:TryPlayLowHealthSound()
         end)

@@ -3,6 +3,19 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local deadCache = {}
 local nextDeathSoundAt = 0
 
+local function IsGroupUnit(unit)
+    if not unit then
+        return false
+    end
+
+    local prefix = string.sub(unit, 1, 4)
+    if prefix == "raid" or string.sub(unit, 1, 5) == "party" then
+        return tonumber(string.match(unit, "(%d+)$")) ~= nil
+    end
+
+    return false
+end
+
 function LHH:RefreshRoster()
     wipe(deadCache)
     if IsInGroup() then
@@ -19,7 +32,7 @@ function LHH:OnUnitUpdate(event, unit)
     if not self.db or not self.db.profile.deathEnabled then return end
     if not unit then return end
     
-    if not (unit:match("^raid%d+$") or unit:match("^party%d+$")) then return end
+    if not IsGroupUnit(unit) then return end
 
     local isDead = UnitIsDeadOrGhost(unit)
     local wasDead = deadCache[unit]
