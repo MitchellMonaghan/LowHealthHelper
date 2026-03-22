@@ -33,7 +33,7 @@ LHH.defaults = {
     profile = {
         pos = { point = "CENTER", x = 0, y = 0 },
         scale = 1.0,
-        potionSpellID = 1238009, 
+        potionSpellID = 1234768, 
         soundName = "Gasp", 
         lowHealthSoundRequiresOption = false,
         lowHealthSoundThrottleSeconds = 0.2,
@@ -248,7 +248,7 @@ function LHH:GetOptions()
             potionSpellID = {
                 type = "input",
                 name = "Potion Spell ID",
-                desc = "Enter the Spell ID of the potion you want to track (e.g., 1238009 for Invigorating Healing Potion).",
+                desc = "Enter the Spell ID of the potion you want to track (e.g., 1234768 for Silvermoon Health Potion).",
                 order = 15,
                 width = 1.5,
                 get = function() return tostring(self.db.profile.potionSpellID) end,

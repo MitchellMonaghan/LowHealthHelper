@@ -2,6 +2,7 @@ local LHH = _G.LHH
 
 local MediaPath = "Interface\\AddOns\\LowHealthHelper\\Media\\Sounds\\"
 local PowerAurasPath = "Interface\\AddOns\\LowHealthHelper\\Media\\PowerAurasMedia\\Sounds\\"
+local DetailsPath = "Interface\\AddOns\\LowHealthHelper\\Media\\DetailsSounds\\"
 if LHH then
 LHH.SoundsToRegister = {
     -- [Name] = Path or FileID
@@ -49,6 +50,16 @@ LHH.SoundsToRegister = {
     ["Double Whoosh"]           = MediaPath.."DoubleWhoosh.ogg",
     ["Brass"]                   = MediaPath.."Brass.mp3",
     ["Glass"]                   = MediaPath.."Glass.mp3",
+
+    -- Details Sounds
+    ["Bass Drop"]               = DetailsPath.."bassdrop2.mp3",
+    ["Horn"]                    = DetailsPath.."Details Horn.ogg",
+    ["Truck"]                   = DetailsPath.."Details Truck.ogg",
+    ["Warning 100"]             = DetailsPath.."Details Warning 100.ogg",
+    ["Gun 2"]                   = DetailsPath.."sound_gun2.ogg",
+    ["Gun 3"]                   = DetailsPath.."sound_gun3.ogg",
+    ["Jedi"]                    = DetailsPath.."sound_jedi1.ogg",
+    ["Whip"]                    = DetailsPath.."sound_whip1.ogg",
 
     -- Voice Sounds
     ["Voice: Adds"]             = MediaPath.."Adds.ogg",
