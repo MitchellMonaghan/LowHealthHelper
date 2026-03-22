@@ -8,9 +8,14 @@ local function IsGroupUnit(unit)
         return false
     end
 
-    local prefix = string.sub(unit, 1, 4)
-    if prefix == "raid" or string.sub(unit, 1, 5) == "party" then
-        return tonumber(string.match(unit, "(%d+)$")) ~= nil
+    local raidIndex = tonumber(string.match(unit, "^raid(%d+)$"))
+    if raidIndex then
+        return true
+    end
+
+    local partyIndex = tonumber(string.match(unit, "^party(%d+)$"))
+    if partyIndex then
+        return true
     end
 
     return false
